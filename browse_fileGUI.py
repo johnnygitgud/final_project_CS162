@@ -1,5 +1,6 @@
 # tkinter is for the GUI modules. File dialogue gives me access to file explorer
 # cryptography.fernet gives me accesss to a crypto class so we can encrypt and decrypt a chosen file
+# Sample code from https://www.geeksforgeeks.org/encrypt-and-decrypt-files-using-python/ was used to createthe encryption and decryption code
 from tkinter import *
 from tkinter import filedialog
 from cryptography.fernet import Fernet
@@ -33,146 +34,103 @@ class FileExplorer(BaseWindow):
         self.file_label.configure(text="File Opened: " + filename)
 
 class CryptoHandler:
+    """This class with handle all the crypto taks including:
+    generating key, creating key file, encrypting and decrypting a file chose by the user."""
     def __init__(self):
+        """init method sets data members for key, key file, and genrating_().
+        They are set to none so that other getter methods can have access and assign new values.\
+            generate.key() is in the init because we only need one key generated at a time.
+            THIS FIXES THE 'bug' WHERE MULTIPE KEY OBJECTS WERE GENERATED THAT CRASHED DECRYPTION BECAUSE KEYS DIDN'T MATCH"""
         self._key = None
         self.key_file = None
         self.generate_key()
 
     def generate_key(self):
         """Generate and save a key"""
-        self._key = Fernet.generate_key()
+        # This the basic syntax for creating the key
+        self._key = Fernet.generate_key() #This calls to line 45 only once at a time preventing multiple key objects
+        
+        #file io writes the key to a new file.
         with open('keyfile.key', 'wb') as key_file:
             key_file.write(self._key)
 
     def get_key(self):
-        """Get the key"""
+        """Getter method for the key"""
         return self._key
 
     def encrypt_file(self, filepath):
-        """Encrypt the file using the stored key"""
+        """Encrypt the file using the stored key and filepath data member passed file destination chosen by user.
+        First File explorer class gives the filepath to the label. Application class creates FileExplorer object.
+        Application has method for calling to encrypt_file and passing the file path
+        May need potential warning for users since original file chosen will not be preserved not until it is decrypted. Potential loss of data"""
+        #create the fernet object and store it in the variable fernet_object which will be used for encryption later.
         fernet_object = Fernet(self.get_key())
+        
+        #file io for reading contents of chosen file
         with open(filepath, 'rb') as file:
             original_file = file.read()
+        
+        #syntax for fernet encryption; the object has the key. This encrypts the argument that is passed to encrypt() which is the file that was chosen 
         encrypted = fernet_object.encrypt(original_file)
+
+        #file io is used to write the encrypted file. The orginal file becomes encrypted and overwritten.
         with open(filepath, 'wb') as encrypted_file:
             encrypted_file.write(encrypted)
 
     def decrypt_file(self, filepath):
         """Decrypt the file using the stored key"""
+        #create the fernet object and store it in the variable fernet_object which will be used for decryption later.
         fernet_object = Fernet(self.get_key())
+
+        #file_io will ready the contents of the file path chosen by user and assign it to a variable to be used later for decryption
         with open(filepath, 'rb') as encrypted_file:
             file_2_decrypt = encrypted_file.read()
+
+        #syntax for fernet decryption; the object has the key. This decrypts the argument that is passed to encrypt() which is the file that was chosen 
         decrypt_file = fernet_object.decrypt(file_2_decrypt)
+
+        #file io is used to rewrite the encrypted file and decrypt it. The orginal file will have the original contents restored
+        # the variable decrypt_file is passed as an argument to do clear the jargon.
         with open(filepath, 'wb') as decrypted_file:
             decrypted_file.write(decrypt_file)
 
-
-# class CryptoHandler:
-#         """This class will handle the genrating of the key necessary to encrypt/decrypt files.
-#         It has methods for getting access to the key and separte methods for encryption/decryption"""
-#         def __init__(self):
-#             """No data members for the init method because the object for this class is easier to handle
-#             without parameters passed to it when the Application class creates the object for CryptoHandler"""
-#             # self variables initialized to None for get methods to return actual key/key_file values
-#             self._key = None 
-#             self.key_file = None
-
-#         def get_key(self):
-#             """This method returns they fernet key and can now be accessed by other methods"""
-#             self._key = Fernet.generate_key()
-#             return self._key
-        
-#         def get_key_file(self):
-#             """This method returns the file of the key"""
-#             with open('keyfile.key', 'wb') as self.key_file:
-#                 self.key_file.write(self.get_key())
-            
-#             with open('keyfile.key', 'rb') as self.key_file:
-#                 self.key_file = self.key_file.read()
-#             return self.key_file
-
-        
-#         def encrypt_file(self, filepath):
-#             """This method encrypts any file chosen by the user. The filepath member is passed a parameter that is received from the Application class.
-#             """
-#             fernet_object = Fernet(self.get_key()) # This line creates the Fernet object that is necessary to give this method access to the key.
-            
-#             # self.get_key_file() # Not necessary to call get_key_file method for encryption method to work
-#             #print(self.get_key_file()) #Test print of the key file
-#             #print(self.get_key) # Test print of the key
-            
-#             #file io is used to read the orginal file path to write to that file in the second with statement
-#             with open(filepath, 'rb') as file: 
-#                 original_file = file.read()
-#             encrypted = fernet_object.encrypt(original_file)
-#             with open(filepath, 'wb') as encrypted_file:
-#                 encrypted_file.write(encrypted)
-
-
-#         def decrypt_file(self, filepath):
-#             fernet_object = Fernet(self.get_key())
-#             print(fernet_object)
-#             with open(filepath,'rb') as encrypted_file:
-#                 file_2_decrypt = encrypted_file.read()
-#             decrypt_file = fernet_object.decrypt(file_2_decrypt)
-#             with open(filepath, 'wb') as decrypted_file:
-#                 decrypted_file.write(decrypt_file)
-
-        """The commented out encrypt_file method under this docstring is working. 
-        However it is not as good as the similar function in test_code.py.
-        The main issue with this method is that I had a hard time trying to get access to the key to decrypt
-        when using another method or another class for decryption.
-        That version generates new files for the encrypted version and decrypted version while preserving the original"""
-        # def encrypt_file(self, file_path):
-            
-        
-        #     key = Fernet.generate_key()
-        #     #using file_io to write key to file
-        #     with open('filekey.key', 'wb') as filekey:
-        #         filekey.write(key)
-        #     # opening the key
-        #     with open('filekey.key', 'rb') as filekey:
-        #         key = filekey.read()
-
-        #     # using the generated key
-        #     fernet = Fernet(key)
-
-        #     # opening the original file to encrypt
-        #     with open(file_path, 'rb') as file:
-        #         original = file.read()
-                
-        #     # encrypting the file
-        #     encrypted = fernet.encrypt(original)
-
-        #     # opening the file in write mode and 
-        #     # writing the encrypted data
-        #     with open(file_path, 'wb') as encrypted_file:
-        #         encrypted_file.write(encrypted)
-
-        #     print(f"Encrypting file: {file_path}")
-
 class Application(BaseWindow):
+    """This class has inherited the BaseWindow class and has access to the roots necessary for tk.
+    This class will also create objects needed for generating the tk window, enabling file explorer,
+     enabling the cryptography, and creating the buttons for encrypt/decrypt and their method calls/commands."""
     def __init__(self, root):
         super().__init__(root)
+        """super is used to get access to inerited object"""
+        #object for FileExplorer class
         self.file_explorer = FileExplorer(root)
+        
+        #object for CryptoHandler class
         self.encryption_handler = CryptoHandler()
 
+        # create encrypt button
         self.encrypt_button = Button(root, text="Encrypt", command=self.handle_encryption)
         self.encrypt_button.grid(column=1, row=3)
 
+        #create decrypt button
         self.decrypt_button = Button(root, text="Decrypt", command=self.handle_decryption)
         self.decrypt_button.grid(column=1, row=5)
 
     def handle_encryption(self):
+        """This method updates the label to show the chosen file path and calls the encrypt_file method from CryptoHandler
+        and passes the file the user chose."""
         selected_file = self.file_explorer.file_label.cget("text").replace("File Opened: ", "")
         if selected_file:
             self.encryption_handler.encrypt_file(selected_file)
     
     def handle_decryption(self):
+        """This method updates the label to show the chosen file path and calls the decrypt_file method from CryptoHandler
+        and passes the file the user chose."""
         selected_file = self.file_explorer.file_label.cget("text").replace("File Opened: ", "")
         if selected_file:
             self.encryption_handler.decrypt_file(selected_file)
 
+# script for referencing the code above and running it.
+# Tk, Application objects are created and mainloop is ran to generate the GUI
 if __name__ == "__main__":
     root = Tk()
     app = Application(root)
